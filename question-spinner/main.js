@@ -1,6 +1,15 @@
 // Create global page styles
 createStyles(scss`&{
 	background-color: ${theme.color.greyStep(-1)};
+	svg.patterns{
+		position:absolute;
+		opacity:0;
+		width:0;
+		height:0;
+		>pattern>g{
+			opacity:.3;
+		}
+	}
 }`());
 
 // Create data

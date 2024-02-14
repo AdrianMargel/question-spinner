@@ -397,12 +397,20 @@ class SpinnerSlice extends CustomElm{
 		this.define(html`
 			<div style="transform: rotate(${num/range*TAU}rad)">
 				<svg viewBox="0 0 100 100">
+				${(range>1)?svg`
 					<path
 						d="M ${arcStart.x} ${arcStart.y}
 							A 50 50 0 0 0 ${arcEnd.x} ${arcEnd.y}
 							L 50 50
 							L ${arcStart.x} ${arcStart.y}"
-						fill="${hsv(num/range,.5,1)}"
+						fill="${hsv(num/range,.6,1)}"
+					/>
+					<path
+						d="M ${arcStart.x} ${arcStart.y}
+							A 50 50 0 0 0 ${arcEnd.x} ${arcEnd.y}
+							L 50 50
+							L ${arcStart.x} ${arcStart.y}"
+						fill="url(#pattern${num%6})"
 					/>
 					<path
 						d="M ${arcStart.x} ${arcStart.y}
@@ -412,6 +420,7 @@ class SpinnerSlice extends CustomElm{
 						stroke="${hsv(num/range,.75,.75)}"
 						stroke-width=".5"
 					/>
+				`:null}
 				</svg>
 				<p 
 					style="
@@ -808,7 +817,9 @@ class EditList extends CustomElm{
 						<button class="delete" onclick=${attr(act(()=>{
 							let idx=this.list.indexOf(a);
 							if(idx!=-1){
+								this.list.lock();
 								this.list.splice(idx,1);
+								this.list.unlock();
 							}
 						}))}>
 							<img src="img/trash-can.svg">
