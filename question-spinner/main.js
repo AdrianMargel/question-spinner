@@ -26,6 +26,26 @@ let peopleData=bind([
 		enabled:true,
 		text:"Sally",
 		count:0
+	},{
+		enabled:true,
+		text:"Jack",
+		count:0
+	},{
+		enabled:true,
+		text:"Jill",
+		count:0
+	},{
+		enabled:true,
+		text:"Bill",
+		count:0
+	},{
+		enabled:true,
+		text:"Don",
+		count:0
+	},{
+		enabled:true,
+		text:"Sam",
+		count:0
 	}
 ]);
 let questionData=bind([
