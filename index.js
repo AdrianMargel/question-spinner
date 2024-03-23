@@ -31,8 +31,9 @@ router.post('/save', async (ctx,next) =>{
 			let data=JSON.parse(body);
 			if(typeof data=="object"&&!Array.isArray(data)){
 				let room=data.room;
-				let info=data.info;
-				if(room==null||info==null){
+				let people=data.people;
+				let questions=data.questions;
+				if(room==null||people==null||questions==null){
 					ctx.response.status=Status.BAD_REQUEST;
 					return;
 				}
@@ -44,17 +45,17 @@ router.post('/save', async (ctx,next) =>{
 						{$set:{ 
 							ip,
 							time,
-							info,
+							data:body,
 						}},
 					);
 				}else{
 					await table.insertOne({
 						_id: new ObjectId(),
 
+						room,
 						ip,
 						time,
-						room,
-						info,
+						data:body,
 					});
 				}
 				ctx.response.status=Status.OK;
@@ -65,12 +66,12 @@ router.post('/save', async (ctx,next) =>{
 	ctx.response.status=Status.BAD_REQUEST;
 });
 router.get('/load/:room', async (ctx,next) =>{
-	let room=context?.params?.id;
+	let room=ctx?.params?.room;
 	if(room==null){
 		ctx.response.status=Status.BAD_REQUEST;
 		return;
 	}
-	ctx.response.body=table.findOne({room});
+	ctx.response.body=(await table.findOne({room}))?.data;
 	ctx.response.status=Status.OK;
 });
 app.use(router.allowedMethods());

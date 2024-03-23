@@ -48,7 +48,6 @@ class InputInt extends CustomElm{
 					if(this.validate(val)){
 						num.data=Number(val);
 					}
-					num.update();
 				}))()}
 			/>
 		`);

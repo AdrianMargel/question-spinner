@@ -62,12 +62,19 @@ let questionData=bind([
 
 let loadFunc=async ()=>{
 	let req=await fetch("/load/default");
-	let data=req.json();
+	let data;
+	try{
+		data=await req.json();
+	}catch(e){
+		console.log("Skipped load, no data to load");
+		return;
+	}
 	// let pData=JSON.parse(localStorage.getItem("people"));
 	// let qData=JSON.parse(localStorage.getItem("questions"));
 	let pData=data?.people;
 	let qData=data?.questions;
 	if(pData!=null&&qData!=null){
+		console.log("load");
 		// TODO: technically there should be validation here but it doesn't really matter
 		peopleData=bind(
 			pData
@@ -80,13 +87,12 @@ let loadFunc=async ()=>{
 	}
 };
 
-loadFunc();
-
 let saveFunc=()=>{
 	if(saveLock){
-		console.log("Skipped save");
+		console.log("Skipped save, due to save lock");
 		return;
 	}
+	console.log("save");
 	let pData=unbind(peopleData);
 	let qData=unbind(questionData);
 	
@@ -95,9 +101,9 @@ let saveFunc=()=>{
 		body:JSON.stringify({
 			room:"default",
 			people:pData,
-			questionData:qData,
+			questions:qData,
 		})
-	})
+	});
 	// localStorage.setItem("people",JSON.stringify(pData)),
 	// localStorage.setItem("questions",JSON.stringify(qData));
 }
@@ -109,33 +115,39 @@ let unlockSave=(update=true)=>{
 		saveFunc();	
 	}
 };
-link(saveFunc,questionData,peopleData);
-let saveFuncLink=link(()=>{
-	questionData.forEach(x=>link(saveFunc,
-		x.enabled,
-		x.text,
-		x.count
-	));
-	peopleData.forEach(x=>link(saveFunc,
-		x.enabled,
-		x.text,
-		x.count
-	));
-},questionData,peopleData);
-saveFuncLink();
+let saveFuncLink;
 
-// Set up scroll watcher
-let scrollPosition=bind(0);
-document.addEventListener('scroll', ()=>{
-	scrollPosition.data=window.scrollY;
-});
+async function main(){
+	await loadFunc();
+	link(saveFunc,questionData,peopleData);
+	saveFuncLink=link(()=>{
+		questionData.forEach(x=>link(saveFunc,
+			x.enabled,
+			x.text,
+			x.count
+		));
+		peopleData.forEach(x=>link(saveFunc,
+			x.enabled,
+			x.text,
+			x.count
+		));
+	},questionData,peopleData);
+	saveFuncLink();
 
-// Populate page html
-let body=html`
-	${new SpinnerBox()}
-	${new EndSymbol}
-	${new EditBox()}
-`();
-addElm(body,document.body);
-body.disolve();
+	// Set up scroll watcher
+	let scrollPosition=bind(0);
+	document.addEventListener('scroll', ()=>{
+		scrollPosition.data=window.scrollY;
+	});
+
+	// Populate page html
+	let body=html`
+		${new SpinnerBox()}
+		${new EndSymbol}
+		${new EditBox()}
+	`();
+	addElm(body,document.body);
+	body.disolve();
+}
+main();
 
