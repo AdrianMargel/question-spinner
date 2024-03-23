@@ -53,30 +53,62 @@ let questionData=bind([
 		enabled:true,
 		text:"How much wood could a woodchuck chuck if a woodchuck could chuck wood?",
 		count:0
+	},{
+		enabled:true,
+		text:"What is your favorite color?",
+		count:0
 	}
 ]);
 
-let loadFunc=()=>{
-	let pData=JSON.parse(localStorage.getItem("people"));
-	let qData=JSON.parse(localStorage.getItem("questions"));
+let loadFunc=async ()=>{
+	let req=await fetch("/load/default");
+	let data=req.json();
+	// let pData=JSON.parse(localStorage.getItem("people"));
+	// let qData=JSON.parse(localStorage.getItem("questions"));
+	let pData=data?.people;
+	let qData=data?.questions;
 	if(pData!=null&&qData!=null){
+		// TODO: technically there should be validation here but it doesn't really matter
 		peopleData=bind(
 			pData
 		);
 		questionData=bind(
 			qData
 		);
+	}else{
+		console.log("Skipped load, data was null");
 	}
 };
 
 loadFunc();
 
 let saveFunc=()=>{
+	if(saveLock){
+		console.log("Skipped save");
+		return;
+	}
 	let pData=unbind(peopleData);
 	let qData=unbind(questionData);
-	localStorage.setItem("people",JSON.stringify(pData)),
-	localStorage.setItem("questions",JSON.stringify(qData));
+	
+	fetch("/save",{
+		method: "POST",
+		body:JSON.stringify({
+			room:"default",
+			people:pData,
+			questionData:qData,
+		})
+	})
+	// localStorage.setItem("people",JSON.stringify(pData)),
+	// localStorage.setItem("questions",JSON.stringify(qData));
 }
+let saveLock=false;//TODO: use save locking
+let lockSave=()=>{saveLock=true};
+let unlockSave=(update=true)=>{
+	saveLock=false;
+	if(update){
+		saveFunc();	
+	}
+};
 link(saveFunc,questionData,peopleData);
 let saveFuncLink=link(()=>{
 	questionData.forEach(x=>link(saveFunc,
