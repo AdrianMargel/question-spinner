@@ -25,7 +25,9 @@ router.post('/save', async (ctx,next) =>{
 	const ip=ctx.request.ip;
 	const time=new Date().getTime();
 
-	let body=await (await ctx.request.body()).value;
+	console.log(ctx.request.body);
+	console.log(ctx.request.body.json);
+	let body=await ctx.request.body.json();
 	if(body.length<100000){
 		try{
 			let data=JSON.parse(body);
