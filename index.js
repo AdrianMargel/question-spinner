@@ -1,9 +1,80 @@
-import { Application, send } from "https://deno.land/x/oak/mod.ts";
+import { Application, Router, Status, send } from "https://deno.land/x/oak/mod.ts";
+import {
+	MongoClient,
+	ObjectId,
+} from "https://deno.land/x/atlas_sdk@v1.1.0/mod.ts";
+
+// MONGO DB
+const client = new MongoClient({
+	endpoint: "https://us-west-2.aws.data.mongodb-api.com/app/data-bduil/endpoint/data/v1",
+	dataSource: "Main-Cluster",
+	auth: {
+		apiKey: Deno.env.get("MONGO_API_KEY"),
+	},
+});
+
+const db=client.database("small-projects");
+const table=db.collection("question-spinner");
 
 // SERVER
 const ROOT_DIR=Deno.cwd()+"/question-spinner";
 
 const app=new Application();
+const router = new Router();
+router.post('/save', async (ctx,next) =>{
+	const ip=ctx.request.ip;
+	const time=new Date().getTime();
+
+	let body=await ctx.request.body().value;
+	if(body.length<100000){
+		try{
+			let data=JSON.parse(body);
+			if(typeof data=="object"&&!Array.isArray(data)){
+				let room=data.room;
+				let info=data.info;
+				if(room==null||info==null){
+					ctx.response.status=Status.BAD_REQUEST;
+					return;
+				}
+				
+  				let found=await table.findOne({room});
+				if(found!=null){
+					await table.updateOne(
+						{room},
+						{$set:{ 
+							ip,
+							time,
+							info,
+						}},
+					);
+				}else{
+					await table.insertOne({
+						_id: new ObjectId(),
+
+						ip,
+						time,
+						room,
+						info,
+					});
+				}
+				ctx.response.status=Status.OK;
+				return;
+			}
+		}catch{}
+	}
+	ctx.response.status=Status.BAD_REQUEST;
+});
+router.get('/load/:room', async (ctx,next) =>{
+	let room=context?.params?.id;
+	if(room==null){
+		ctx.response.status=Status.BAD_REQUEST;
+		return;
+	}
+	ctx.response.body=table.findOne({room});
+	ctx.response.status=Status.OK;
+});
+app.use(router.allowedMethods());
+app.use(router.routes());
 
 app.use(async (ctx, next)=>{
 	const filePath=ctx.request.url.pathname;
