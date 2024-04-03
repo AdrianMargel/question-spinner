@@ -17,35 +17,43 @@ let peopleData=bind([
 	{
 		enabled:true,
 		text:"John",
-		count:0
+		answerCount:0,
+		askCount:0,
 	},{
 		enabled:true,
 		text:"Bob",
-		count:0
+		answerCount:0,
+		askCount:0,
 	},{
 		enabled:true,
 		text:"Sally",
-		count:0
+		answerCount:0,
+		askCount:0,
 	},{
 		enabled:true,
 		text:"Jack",
-		count:0
+		answerCount:0,
+		askCount:0,
 	},{
 		enabled:true,
 		text:"Jill",
-		count:0
+		answerCount:0,
+		askCount:0,
 	},{
 		enabled:true,
 		text:"Bill",
-		count:0
+		answerCount:0,
+		askCount:0,
 	},{
 		enabled:true,
 		text:"Don",
-		count:0
+		answerCount:0,
+		askCount:0,
 	},{
 		enabled:true,
 		text:"Sam",
-		count:0
+		answerCount:0,
+		askCount:0,
 	}
 ]);
 let questionData=bind([
@@ -129,7 +137,8 @@ async function main(){
 		peopleData.forEach(x=>link(saveFunc,
 			x.enabled,
 			x.text,
-			x.count
+			x.askCount,
+			x.answerCount
 		));
 	},questionData,peopleData);
 	saveFuncLink();

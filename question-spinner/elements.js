@@ -1,12 +1,3 @@
-
-/*
-
-	This file is kind of a mess, or at least the styles are.
-	The CSS still isn't very elagent and some of the things I tried to midigate that are still very experimental.
-	However the elements themselves I'm pretty happy with.
-
-*/
-
 class Input extends CustomElm{
 	constructor(text){
 		super();
@@ -312,7 +303,7 @@ defineElm(EndSymbol,scss`&{
 	${theme.centerX}
 	opacity: 0.2;
 	position: absolute;
-	bottom: 0;
+	bottom:0;
 	right: calc(50% - 90px);
 	width: 180px;
 	z-index: -1;
@@ -498,41 +489,23 @@ class SpinnerStack extends CustomElm{
 			return;
 		}
 
-		let person1,person2,question;
-		{
-			let sorted=[...enabledPeople].sort((a,b)=>a.count.data-b.count.data);
-			let least=sorted[0].count.data;
-			let least2=sorted[1].count.data;
-			let options=sorted.filter(x=>x.count.data<=least2);
-			let idx1=flr(rand(options.length));
-			let idx2=flr(rand(options.length-1));
-			if(least!=least2){
-				idx1=0;
-			}
-			let op1=options.splice(idx1,1)[0];
-			let op2=options.splice(idx2,1)[0];
-			let realIdx1=enabledPeople.indexOf(op1);
-			let realIdx2=enabledPeople.indexOf(op2);
-			if(rand()<.5){
-				//remove bias
-				[op1,op2]=[op2,op1];
-				[realIdx1,realIdx2]=[realIdx2,realIdx1];
-			}
-			this.spinner1.spin(realIdx1);
-			this.spinner2.spin(realIdx2);
-			person1=op1;
-			person2=op2;
-		}
-
-		{
-			let sorted=[...enabledQuestions].sort((a,b)=>a.count.data-b.count.data);
-			let least=sorted[0].count.data;
-			let options=sorted.filter(x=>x.count.data<=least);
+		function pick(list,pickByFunc){
+			let sorted=[...list].sort((a,b)=>pickByFunc(a)-pickByFunc(b));
+			let least=pickByFunc(sorted[0]);
+			let options=sorted.filter(x=>pickByFunc(x)<=least);
 			let idx=flr(rand(options.length));
-			let op=options.splice(idx,1)[0];
-			question=op;
+			return options[idx];
 		}
-		return {question,person1,person2};
+		
+		let personAnswer=pick(enabledPeople,x=>x.answerCount.data);
+		let remainingPeople=[...enabledPeople].filter(x=>x!=personAnswer); //prevent people from asking themselves
+		let personAsk=pick(remainingPeople,x=>x.askCount.data);
+
+		let question=pick(enabledQuestions,x=>x.count.data);
+		
+		this.spinner1.spin(enabledPeople.indexOf(personAnswer));
+		this.spinner2.spin(enabledPeople.indexOf(personAsk));
+		return {question,personAnswer,personAsk};
 	}
 }
 defineElm(SpinnerStack,scss`&{
@@ -624,11 +597,11 @@ defineElm(SpinnerStack,scss`&{
 }`);
 
 class QuestionDisplay extends CustomElm{
-	constructor(question,person1,person2){
+	constructor(question,personAnswer,personAsk){
 		super();
 		this.question=question;
-		this.person1=person1;
-		this.person2=person2;
+		this.personAnswer=personAnswer;
+		this.personAsk=personAsk;
 
 		this.delayAnim=animate((t,delta)=>{
 			if(t==1)
@@ -657,16 +630,16 @@ class QuestionDisplay extends CustomElm{
 					`)(this.peopleFade)}
 				>
 					${html`${()=>
-						this.person2.data==null?
+						this.personAsk.data==null?
 							""
-							:html`${this.person2.data.text}`(this.person2.data.text)
-					}`(this.person2)}
+							:html`${this.personAsk.data.text}`(this.personAsk.data.text)
+					}`(this.personAsk)}
 					asks
 					${html`${()=>
-						this.person1.data==null?
+						this.personAnswer.data==null?
 							""
-							:html`${this.person1.data.text}`(this.person1.data.text)
-					}`(this.person1)}
+							:html`${this.personAnswer.data.text}`(this.personAnswer.data.text)
+					}`(this.personAnswer)}
 				</p>
 				<p
 					class="question"
@@ -745,8 +718,8 @@ class SpinnerBox extends CustomElm{
 		this.questionElm;
 
 		this.question=bind(null);
-		this.person1=bind(null);
-		this.person2=bind(null);
+		this.personAnswer=bind(null);
+		this.personAsk=bind(null);
 
 		this.define(html`
 			<div>
@@ -755,30 +728,46 @@ class SpinnerBox extends CustomElm{
 						let result=this.spinnerElm.spin();
 						if(result!=null){
 							this.question.data=result.question;
-							this.person1.data=result.person1;
-							this.person2.data=result.person2;
+							this.personAnswer.data=result.personAnswer;
+							this.personAsk.data=result.personAsk;
 							this.questionElm.ask();
 						}
 					},()=>this.updateCount())}
 				</div>
-				${this.questionElm=new QuestionDisplay(this.question,this.person1,this.person2)}
+				${this.questionElm=new QuestionDisplay(this.question,this.personAnswer,this.personAsk)}
 			</div>
 		`);
 	}
 	updateCount(){
 		if(this.question.data!=null)
 			this.question.data.count.data++;
-		if(this.person1.data!=null)
-			this.person1.data.count.data++;
-		if(this.person2.data!=null)
-			this.person2.data.count.data++;
+		if(this.personAnswer.data!=null)
+			this.personAnswer.data.answerCount.data++;
+		if(this.personAsk.data!=null)
+			this.personAsk.data.askCount.data++;
+
+		this.normalizeCount();
+	}
+	normalizeCount(){
+		function norm(list,getFunc,setFunc){
+			if(list.length>=2){
+				let minVal=list.map(getFunc).reduce((a,b)=>min(a,b));
+				if(minVal>0){
+					list.forEach(x=>setFunc(x,minVal));
+				}
+			}
+		}
+
+		norm(questionData,x=>x.count.data,(x,v)=>x.count.data-=v);
+		norm(peopleData,x=>x.askCount.data,(x,v)=>x.askCount.data-=v);
+		norm(peopleData,x=>x.answerCount.data,(x,v)=>x.answerCount.data-=v);
 	}
 }
 defineElm(SpinnerBox,scss`&{
 	display:block;
 	overflow:hidden;
 	>div{
-		height:max(800px, 100vh);
+		height:max(900px, 100vh);
 		position:relative;
 		>.spinner{
 			${theme.center}
@@ -790,7 +779,7 @@ defineElm(SpinnerBox,scss`&{
 	}
 }`);
 
-class EditList extends CustomElm{
+class QuestionEditList extends CustomElm{
 	constructor(list){
 		super();
 
@@ -843,12 +832,12 @@ class EditList extends CustomElm{
 					})
 				}))}>
 					<p>ADD NEW</p>
-				</div>
-			</button>
+				</button>
+			</div>
 		`);
 	}
 }
-defineElm(EditList,scss`&{
+defineElm(QuestionEditList,scss`&{
 	display:block;
 	width:100%;
 	>.head{
@@ -945,6 +934,170 @@ defineElm(EditList,scss`&{
 		}
 	}
 }`);
+
+class PeopleEditList extends CustomElm{
+	constructor(list){
+		super();
+
+		this.list=list;
+
+		this.define(html`
+			<div class="head">
+				<div class="delete">
+				</div>
+				<div class="name">
+					<p>Name<p>
+				</div>
+				<div class="num">
+					<p>Asked<p>
+				</div>
+				<div class="num">
+					<p>Answered<p>
+				</div>
+				<div class="on">
+					<p>On<p>
+				</div>
+			</div>
+			<div class="body">
+				${html`${()=>this.list.map(a=>html`
+					<div class=${attr(()=>"item "+(a.enabled.data?"":"disabled"))(a.enabled)}>
+						<button class="delete" onclick=${attr(act(()=>{
+							let idx=this.list.indexOf(a);
+							if(idx!=-1){
+								this.list.lock();
+								this.list.splice(idx,1);
+								this.list.unlock();
+							}
+						}))}>
+							<img src="img/trash-can.svg">
+						</button>
+						<div class="name">
+							${new Input(a.text)}
+						</div>
+						<div class="num">
+							${new InputInt(a.askCount)}
+						</div>
+						<div class="num">
+							${new InputInt(a.answerCount)}
+						</div>
+						<div class="on">
+							${new InputCheck(a.enabled)}
+						</div>
+						<div class="cover"></div>
+					</div>
+				`)}`(this.list)}
+				<button class="addItem" onclick=${attr(act(()=>{
+					this.list.push({
+						enabled:true,
+						text:"",
+						askCount:0,
+						answerCount:0
+					})
+				}))}>
+					<p>ADD NEW</p>
+				</button>
+			</div>
+		`);
+	}
+}
+defineElm(PeopleEditList,scss`&{
+	display:block;
+	width:100%;
+	>.head{
+		border: 2px solid ${theme.color.inputStep(0)};
+		border-bottom:none;
+		background-color:${theme.color.inputStep(-.5)};
+		${theme.center}
+		>div{
+			border: 2px solid ${theme.color.inputStep(0)};
+			border-bottom:none;
+			height:${40-2}px;
+			${theme.center}
+			box-sizing: border-box;
+			${theme.font.interact}
+			color:${theme.color.inputStep(5)};
+		}
+		>.delete{
+			width:40px;
+			min-width:40px;
+		}
+		>.name{
+			flex-grow:1;
+		}
+		>.num{
+			width:100px;
+			min-width:100px;
+		}
+		>.on{
+			width:40px;
+			min-width:40px;
+		}
+	}
+	>.body{
+		border: 2px solid ${theme.color.inputStep(0)};
+		>.item{
+			display:flex;
+			position: relative;
+			>.delete{
+				cursor: pointer;
+				background-color:${theme.color.inputStep(-1.5)};
+				border: 2px solid ${theme.color.inputStep(0)};
+				width:40px;
+				min-width:40px;
+				${theme.center}
+				>img{
+					z-index:2;
+					width:20px;
+					height:20px;
+					opacity:.25;
+				}
+				&:hover{
+					>img{
+						opacity:1;
+					}
+				}
+			}
+			>.name{
+				flex-grow:1;
+			}
+			>.num{
+				width:100px;
+				min-width:100px;
+			}
+			>.on{
+				width:40px;
+				min-width:40px;
+			}
+			&.disabled{
+				>.cover{
+					position:absolute;
+					inset:2px;
+					background-color: ${theme.color.inputStep(-2)};
+					opacity:.75;
+					pointer-events:none;
+				}
+			}
+		}
+		>.addItem{
+			cursor: pointer;
+			background-color:${theme.color.inputStep(-1.5)};
+			height:40px;
+			border: 2px solid ${theme.color.inputStep(0)};
+			${theme.center}
+			width:100%;
+			>p{
+				${theme.font.interact}
+				color:${theme.color.white};
+				user-select:none;
+			}
+			&:hover{
+				background-color:${theme.color.inputStep(-.5)};
+
+			}
+		}
+	}
+}`);
+
 class EditBox extends CustomElm{
 	constructor(){
 		super();
@@ -954,12 +1107,19 @@ class EditBox extends CustomElm{
 			<div>
 				<div class="people">
 					<p>People</p>
-					${new ButtonClickable("SORT",()=>{
-						peopleData.lock();
-						peopleData.sort((a,b)=>a.count.data-b.count.data);
-						peopleData.unlock();
-					})}
-					${new EditList(peopleData)}
+					<div class="buttons">
+						${new ButtonClickable("SORT ASKED",()=>{
+							peopleData.lock();
+							peopleData.sort((a,b)=>a.askCount.data-b.askCount.data);
+							peopleData.unlock();
+						})}
+						${new ButtonClickable("SORT ANSWERED",()=>{
+							peopleData.lock();
+							peopleData.sort((a,b)=>a.answerCount.data-b.answerCount.data);
+							peopleData.unlock();
+						})}
+					</div>
+					${new PeopleEditList(peopleData)}
 				</div>
 				<div class="questions">
 					<p>Questions</p>
@@ -968,7 +1128,7 @@ class EditBox extends CustomElm{
 						questionData.sort((a,b)=>a.count.data-b.count.data);
 						questionData.unlock();
 					})}
-					${new EditList(questionData)}
+					${new QuestionEditList(questionData)}
 				</div>
 			</div>
 		`);
@@ -997,16 +1157,20 @@ defineElm(EditBox,scss`&{
 				margin:0 40px;
 			}
 			padding:0 40px;
-			>${EditList}{
+			>${QuestionEditList},>${PeopleEditList}{
 				margin-top:30px;
 				${theme.boxShadowStep(0)}
 			}
 			>${ButtonClickable}{
 				margin-top:30px;
 			}
-		}
-		&.people{
-			
+			&.people >.buttons{
+				${theme.centerX}
+				margin-top:30px;
+				>*:first-child{
+					margin-right:20px;
+				}
+			}
 		}
 	}
 }`);
