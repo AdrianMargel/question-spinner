@@ -739,6 +739,7 @@ class SpinnerBox extends CustomElm{
 		`);
 	}
 	updateCount(){
+		lockSave();
 		if(this.question.data!=null)
 			this.question.data.count.data++;
 		if(this.personAnswer.data!=null)
@@ -747,6 +748,7 @@ class SpinnerBox extends CustomElm{
 			this.personAsk.data.askCount.data++;
 
 		this.normalizeCount();
+		unlockSave();
 	}
 	normalizeCount(){
 		function norm(list,getFunc,setFunc){
