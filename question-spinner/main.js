@@ -152,7 +152,6 @@ async function main(){
 	// Populate page html
 	let body=html`
 		${new SpinnerBox()}
-		${new EndSymbol}
 		${new EditBox()}
 	`();
 	addElm(body,document.body);

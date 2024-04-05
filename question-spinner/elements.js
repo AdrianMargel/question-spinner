@@ -802,8 +802,9 @@ class QuestionEditList extends CustomElm{
 				</div>
 			</div>
 			<div class="body">
-				${html`${()=>this.list.map(a=>html`
+				${html`${()=>this.list.map((a,i)=>html`
 					<div class=${attr(()=>"item "+(a.enabled.data?"":"disabled"))(a.enabled)}>
+						<div class="idx"><p>${i}</p></div>
 						<button class="delete" onclick=${attr(act(()=>{
 							let idx=this.list.indexOf(a);
 							if(idx!=-1){
@@ -877,6 +878,20 @@ defineElm(QuestionEditList,scss`&{
 		>.item{
 			display:flex;
 			position: relative;
+			>.idx{
+				height:40px;
+				width:40px;
+				position: absolute;
+				${theme.center}
+				>p{
+					position: relative;
+					right:40px;
+					opacity:.25;
+					color:${theme.color.white};
+					${theme.font.secondary};
+					${theme.font.sizeStep(0)}
+				}
+			}
 			>.delete{
 				cursor: pointer;
 				background-color:${theme.color.inputStep(-1.5)};
@@ -961,8 +976,9 @@ class PeopleEditList extends CustomElm{
 				</div>
 			</div>
 			<div class="body">
-				${html`${()=>this.list.map(a=>html`
+				${html`${()=>this.list.map((a,i)=>html`
 					<div class=${attr(()=>"item "+(a.enabled.data?"":"disabled"))(a.enabled)}>
+						<div class="idx"><p>${i}</p></div>
 						<button class="delete" onclick=${attr(act(()=>{
 							let idx=this.list.indexOf(a);
 							if(idx!=-1){
@@ -1040,6 +1056,20 @@ defineElm(PeopleEditList,scss`&{
 		>.item{
 			display:flex;
 			position: relative;
+			>.idx{
+				height:40px;
+				width:40px;
+				position: absolute;
+				${theme.center}
+				>p{
+					position: relative;
+					right:40px;
+					opacity:.25;
+					color:${theme.color.white};
+					${theme.font.secondary};
+					${theme.font.sizeStep(0)}
+				}
+			}
 			>.delete{
 				cursor: pointer;
 				background-color:${theme.color.inputStep(-1.5)};
@@ -1110,6 +1140,11 @@ class EditBox extends CustomElm{
 				<div class="people">
 					<p>People</p>
 					<div class="buttons">
+						${new ButtonClickable("SORT NAME",()=>{
+							peopleData.lock();
+							peopleData.sort((a,b)=>a.text.data.localeCompare(b.text.data));
+							peopleData.unlock();
+						})}
 						${new ButtonClickable("SORT ASKED",()=>{
 							peopleData.lock();
 							peopleData.sort((a,b)=>a.askCount.data-b.askCount.data);
@@ -1171,6 +1206,9 @@ defineElm(EditBox,scss`&{
 				margin-top:30px;
 				>*:first-child{
 					margin-right:20px;
+				}
+				>*:last-child{
+					margin-left:20px;
 				}
 			}
 		}
