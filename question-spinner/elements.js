@@ -382,6 +382,18 @@ class SpinnerSlice extends CustomElm{
 
 		this.text=bind(text);
 
+
+		let colBase=RGB(...[
+			[247,146,30],
+			[177,70,34],
+			[96,39,72],
+			[62,28,52],
+		][num%4]).toSpace("hsv");
+		let colDark=colBase.cln().scl([1.,1.,.7,1.]);
+		let colText=hsv(colBase.cln().x,1,1);
+		let colTextBorder=colText.cln().scl([1.,.5,1.,1.]);
+		let colTextBack=colText.cln().scl([1.,.75,.25,1.]);
+
 		let arcStart=VecA(50,PI/range).add(50);
 		let arcEnd=VecA(50,-PI/range).add(50);
 		this.define(html`
@@ -393,7 +405,7 @@ class SpinnerSlice extends CustomElm{
 							A 50 50 0 0 0 ${arcEnd.x} ${arcEnd.y}
 							L 50 50
 							L ${arcStart.x} ${arcStart.y}"
-						fill="${hsv(num/range,.6,1)}"
+						fill="${colBase}"
 					/>
 					<path
 						d="M ${arcStart.x} ${arcStart.y}
@@ -407,16 +419,16 @@ class SpinnerSlice extends CustomElm{
 							L 50 50
 							L ${arcEnd.x} ${arcEnd.y}"
 						fill="transparent"
-						stroke="${hsv(num/range,.75,.75)}"
+						stroke="${colDark}"
 						stroke-width=".5"
 					/>
 				`:null}
 				</svg>
 				<p 
 					style="
-						background-color:${hsv(num/range,.75,.25)};
-						border-color:${hsv(num/range,.5,1)};
-						color:${hsv(num/range,1,1)};
+						background-color:${colTextBack};
+						border-color:${colTextBorder};
+						color:${colText};
 					"
 				>
 					${html`${this.text}`(this.text)}
