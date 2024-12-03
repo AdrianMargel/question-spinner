@@ -383,12 +383,13 @@ class SpinnerSlice extends CustomElm{
 		this.text=bind(text);
 
 
-		let colBase=RGB(...[
-			[247,146,30],
-			[177,70,34],
-			[96,39,72],
-			[62,28,52],
-		][num%4]).toSpace("hsv");
+		// let colBase=RGB(...[
+		// 	[247,146,30],
+		// 	[177,70,34],
+		// 	[96,39,72],
+		// 	[62,28,52],
+		// ][num%4]).toSpace("hsv");
+		let colBase=hsv(num/range,.75,1);
 		let colDark=colBase.cln().scl([1.,1.,.7,1.]);
 		let colText=hsv(colBase.cln().x,1,1);
 		let colTextBorder=colText.cln().scl([1.,.5,1.,1.]);
